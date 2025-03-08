@@ -321,3 +321,20 @@ with tab1:
     with mic_col:
         if st.button("🎙️", key="mic_button1"):
             handle_voice_input_and_output()
+
+with tab2:
+    client = gt(api_key="")  # Replace with your OpenAI API key
+    deepgram_client = DeepgramClient(api_key="")
+
+    # Load the main prompt for question generation
+    @st.cache_resource
+    def initialize_agent():
+        """
+        Initializes and returns the AI agent.
+        """
+        return Agent(
+            name="Video AI Summarizer",
+            model=Groq(id="llama-3.2-90b-vision-preview"),
+            tools=[DuckDuckGo()],
+            markdown=True,
+        )
