@@ -54,3 +54,28 @@ def route_to_tools(state: AgentState, ) -> Literal["tools", "__end__"]:
     if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
         return "tools"
     return "__end__"
+
+
+def call_model(state: AgentState):
+    current_data_template = """The following data is available:\n{data_summary}\n
+ """
+
+    current_data_message = HumanMessage(content=current_data_template.format(
+        data_summary=create_data_summary(state)
+    ))
+
+    state["messages"] = [current_data_message] + state["messages"]
+    llm_outputs = model.invoke(state)
+
+    # Ensure the response includes both questions and answers
+    if isinstance(llm_outputs, AIMessage):
+        if "Question" in llm_outputs.content and "Answer" not in llm_outputs.content:
+            # If only questions are provided, request answers
+            follow_up_message = HumanMessage(content="Please provide the answers for these questions.")
+            state["messages"].append(follow_up_message)
+            llm_outputs = model.invoke(state)
+
+    return {
+        "messages": [llm_outputs],
+        "intermediate_outputs": [current_data_message.content]
+    }
