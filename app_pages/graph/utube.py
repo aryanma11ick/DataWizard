@@ -126,3 +126,53 @@ def transcribe_audio(audio_path: str, language: str = "en") -> str:
     except Exception as e:
         print(f"Failed to transcribe audio: {e}")
         return ""
+
+
+# Function to summarize the transcript using OpenAI GPT
+def summarize_transcript(transcript):
+    if not transcript:
+        return "No transcript available for summarization."
+
+    try:
+        response = client1.chat.completions.create(
+            model="gemma2-9b-it",  # Use an appropriate model
+            messages=[
+                {"role": "system", "content": "You are a helpful AI assistant."},
+                {"role": "user", "content": f"Summarize the following transcript:\n{transcript}"}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Failed to summarize transcript: {e}")
+        return ""
+
+
+# Function to extract audio from a video file
+def extract_audio_from_video(video_path):
+    try:
+        video = VideoFileClip(video_path)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        audio_path = f"extracted_audio_{timestamp}.wav"
+        video.audio.write_audiofile(audio_path)
+        return audio_path
+    except Exception as e:
+        print(f"Failed to extract audio from video: {e}")
+        return None
+
+
+# Function to find keyword timestamp
+def find_keyword_timestamp(transcript, keyword):
+    if not transcript:
+        return None
+
+    for entry in transcript:
+        if keyword.lower() in entry['text'].lower():
+            return entry['start']
+    return None
+
+
+# Function to extract URL from text
+def extract_url_from_text(text):
+    url_pattern = re.compile(r'https?://(?:www\.)?youtube\.com/watch\?v=[a-zA-Z0-9_-]+')
+    match = url_pattern.search(text)
+    return match.group(0) if match else None
