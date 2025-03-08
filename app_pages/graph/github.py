@@ -92,4 +92,26 @@ def github_summarize_repo(url: str, keyword: str = "") -> tuple:  # Changed defa
             readme_content = base64.b64decode(readme_data['content']).decode('utf-8')
             readme_text = md_to_text(readme_content)
 
+        # Summarize README if available
+        if readme_text != "No README found in the repository.":
+            summary = summarize_text(readme_text)
+        else:
+            summary = "No README available to summarize."
 
+        # Fetch top-level file tree using the default branch
+        tree_url = f"https://api.github.com/repos/{username}/{repo_name}/git/trees/{default_branch}"
+        response = requests.get(tree_url, headers={"Accept": "application/vnd.github.v3+json"})
+        if response.status_code == 404:
+            structure = "Repository tree not found. The repository might be empty."
+        elif response.status_code != 200:
+            structure = f"Failed to fetch repository structure: HTTP {response.status_code}."
+        else:
+            tree_data = response.json()
+            files = [item['path'] for item in tree_data['tree'] if item['type'] == 'blob']
+            dirs = [item['path'] for item in tree_data['tree'] if item['type'] == 'tree']
+            structure = f"Top-level files: {', '.join(files)}\nTop-level directories: {', '.join(dirs)}"
+            key_dirs_present = [d for d in dirs if d in KEY_DIRECTORIES]
+            if key_dirs_present:
+                structure += f"\nKey directories present: {', '.join(key_dirs_present)}"
+            else:
+                structure += "\nNo key directories (src, tests, docs, examples) found."
