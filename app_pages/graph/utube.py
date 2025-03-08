@@ -45,3 +45,18 @@ def extract_video_id(url):
     else:
         raise ValueError("Invalid YouTube URL: No video ID found")
 
+
+# Function to extract metadata
+def extract_metadata(url):
+    try:
+        r = requests.get(url)
+        r.raise_for_status()  # Raise an error for bad status codes
+        soup = BeautifulSoup(r.text, features="html.parser")
+
+        title = soup.find("title").text if soup.find("title") else "No Title Found"
+        channel = soup.find("link", itemprop="name")['content'] if soup.find("link",
+                                                                             itemprop="name") else "No Channel Found"
+
+        return title, channel
+    except requests.RequestException as e:
+        raise ValueError(f"Failed to fetch metadata: {e}")
