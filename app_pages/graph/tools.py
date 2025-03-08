@@ -118,3 +118,29 @@ def arxiv_search(query: str) -> Tuple[str, dict]:
 
     return 'Error fetching results from arXiv.', {
         "intermediate_outputs": [{"thought": "Error in arXiv search", "output": "Error"}]}
+
+
+@tool(parse_docstring=True)
+def wikipedia_search(query: str) -> Tuple[str, dict]:
+    """
+    Search Wikipedia for a query and generate questions and answers.
+
+    Args:
+        query (str): The search query string.
+
+    Returns:
+        Tuple[str, dict]: The formatted Q&A and state updates.
+    """
+    page = wiki_wiki.page(query)
+    if page.exists():
+        summary = page.summary
+
+        # Format the response as Q&A
+        output = f"""
+        Question: What is {query} and what are its main concepts according to Wikipedia?
+        Answer: {summary}
+        """
+        return output, {"intermediate_outputs": [{"thought": f"Searching Wikipedia for {query}", "output": summary}]}
+
+    return 'No Wikipedia page found for this query.', {
+        "intermediate_outputs": [{"thought": "Error in Wikipedia search", "output": "No page found"}]}
