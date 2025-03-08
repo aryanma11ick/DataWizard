@@ -176,3 +176,67 @@ def extract_url_from_text(text):
     url_pattern = re.compile(r'https?://(?:www\.)?youtube\.com/watch\?v=[a-zA-Z0-9_-]+')
     match = url_pattern.search(text)
     return match.group(0) if match else None
+
+@tool(parse_docstring=True)
+def utube_summarize_video(url: str = None, video_path: str = None, keyword: str = None) -> tuple:
+    """
+    Summarizes a YouTube video or a manually uploaded video by extracting its transcript and generating a summary.
+    If a keyword is provided, it returns the timestamp of the keyword in the video.
+
+    Args:
+        url (str): The URL of the YouTube video.
+        video_path (str): The path to the uploaded video file.
+        keyword (str): A keyword to search for in the video transcript.
+
+    Returns:
+        tuple: A tuple containing the results and a dictionary with intermediate outputs.
+              Format: (results, {"intermediate_outputs": [{"output": results}]})
+    """
+    try:
+        # If URL is not provided, try to extract it from video_path or keyword
+        if not url:
+            if video_path:
+                url = extract_url_from_text(video_path)
+            elif keyword:
+                url = extract_url_from_text(keyword)
+            if not url:
+                return "No YouTube URL provided or found in the input.", {
+                    "intermediate_outputs": [{"output": "No URL found"}]
+                }
+
+        if url:
+            # Handle YouTube video
+            video_id = extract_video_id(url)
+            if not video_id:
+                return "Invalid YouTube URL. Please provide a valid URL in the format 'https://www.youtube.com/watch?v=VIDEO_ID'.", {
+                    "intermediate_outputs": [{"output": "Invalid YouTube URL"}]
+                }
+
+            # Extract metadata
+            try:
+                title, channel = extract_metadata(url)
+                print(f"Title: {title}")
+                print(f"Channel: {channel}")
+            except Exception as e:
+                return f"Failed to fetch video metadata. The video might be private or unavailable. Error: {e}", {
+                    "intermediate_outputs": [{"output": f"Failed to fetch metadata: {e}"}]
+                }
+
+            # Download thumbnail
+            try:
+                download_thumbnail(video_id)
+                print("Thumbnail downloaded as 'thumbnail.jpg'")
+            except Exception as e:
+                print(f"Failed to download thumbnail. Error: {e}")
+
+            # Get transcript
+            audio_path = download_audio(url)  # Unique filename will be generated automatically
+            print(f"Audio downloaded to: {audio_path}")
+
+            # Transcribe audio to text
+            transcript_text = transcribe_audio(audio_path)
+            if not transcript_text:
+                return "Failed to transcribe the audio. Please ensure the audio is clear and in a supported language.", {
+                    "intermediate_outputs": [{"output": "Failed to transcribe audio"}]
+                }
+
