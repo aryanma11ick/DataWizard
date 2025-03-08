@@ -64,3 +64,16 @@ deepgram_api_key = ""
 groq_client = gt(api_key=groq_api_key)
 deepgram_client = DeepgramClient(api_key=deepgram_api_key)
 
+#Initialize Pygame for audio playback
+pygame.mixer.init()
+if 'visualisation_chatbot' not in st.session_state:
+    st.session_state.visualisation_chatbot = PythonChatbot()
+if 'audio_file' not in st.session_state:
+    st.session_state.audio_file = None
+
+if 'visualisation_chatbot' not in st.session_state:
+    st.session_state.visualisation_chatbot = PythonChatbot()
+if 'play_tts' not in st.session_state:
+    st.session_state.play_tts = False
+
+
