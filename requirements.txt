@@ -24,3 +24,4 @@ langgraph
 langchain
 phidata
 moviepy
+markdown
