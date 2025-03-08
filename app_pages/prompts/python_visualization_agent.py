@@ -279,3 +279,45 @@ def handle_voice_input_and_output():
                 else:
                     st.error("Failed to generate response audio.")
         st.rerun()
+
+with tab1:
+    st.subheader("Your Learning Journey")
+
+    def on_submit_user_query():
+        user_query = st.session_state.get('user_input', '')
+        if user_query:
+            st.session_state.visualisation_chatbot.user_sent_message(user_query)
+
+    chat_container = st.container()
+
+    with chat_container:
+        if not st.session_state.visualisation_chatbot.chat_history:
+            st.markdown("""
+                <div class="chat-container">
+                    <div class="teacher-emoji">📚</div>
+                    <span class="animated-text">Ready to master Data Structures, Algorithms, and AI/ML? Let’s get started!</span>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            for msg_index, msg in enumerate(st.session_state.visualisation_chatbot.chat_history):
+                if isinstance(msg, HumanMessage):
+                    with st.chat_message("user"):
+                        st.markdown(msg.content)
+                elif isinstance(msg, AIMessage):
+                    with st.chat_message("assistant"):
+                        st.markdown(msg.content)
+
+    # Play TTS audio automatically when triggered
+    if st.session_state.get('play_tts', False):
+        play_audio("nurse_response.wav")
+        st.session_state.play_tts = False
+
+    # Improved UI alignment with spacing and column ratios
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    input_col, mic_col = st.columns([5, 1])
+    with input_col:
+        st.chat_input(placeholder="Ask me anything about Data Structures, Algorithms, or AI/ML...",
+                      on_submit=on_submit_user_query, key='user_input')
+    with mic_col:
+        if st.button("🎙️", key="mic_button1"):
+            handle_voice_input_and_output()
