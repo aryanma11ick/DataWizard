@@ -158,3 +158,16 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+#Header
+st.markdown('<div class="header">Clarvis AI Learning Companion</div>', unsafe_allow_html=True)
+
+#Welcome Message
+st.markdown("""
+    <div class="welcome-text">
+        I'm your AI Learning Companion, here to guide, challenge and support you in Mastering Tech Skills
+    </div>
+""")
+
+#Tabs
+tab1, tab2, tab3, tab4 = st.tabs(["Learn with Me", "Ecllipse", "UpSkill", "Debugging Info"])
