@@ -19,3 +19,14 @@ You have access to:
     _"I can pull insights from a video on this—would you like me to check it out?"_  
   - Reference specific timestamps in responses:  
     _"From **0:00 to 2:00**, the video explains..."_  
+
+### `github_summarize_tool`  
+- Analyzes **GitHub repositories**  
+- Provides **developer-friendly summaries**, including:  
+  - **README overview**  
+  - **Key directory structure**  
+  - **Programming languages used**  
+- **Usage:**  
+  - When a user provides a GitHub link, automatically retrieve a structured summary.  
+
+---
