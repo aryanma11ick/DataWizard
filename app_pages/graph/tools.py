@@ -144,3 +144,18 @@ def wikipedia_search(query: str) -> Tuple[str, dict]:
 
     return 'No Wikipedia page found for this query.', {
         "intermediate_outputs": [{"thought": "Error in Wikipedia search", "output": "No page found"}]}
+
+
+# Python REPL initialization
+repl = PythonREPL()
+
+persistent_vars = {}
+plotly_saving_code = """import pickle
+import uuid
+import plotly
+
+for figure in plotly_figures:
+    pickle_filename = f"images/plotly_figures/pickle/{uuid.uuid4()}.pickle"
+    with open(pickle_filename, 'wb') as f:
+        pickle.dump(figure, f)
+"""
