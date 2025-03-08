@@ -338,3 +338,167 @@ with tab2:
             tools=[DuckDuckGo()],
             markdown=True,
         )
+
+    def extract_audio_from_video(video_path: str) -> str:
+        """
+        Extracts audio from a video file and saves it as a WAV file.
+        """
+        try:
+            video = VideoFileClip(video_path)
+            audio_path = video_path.replace(".mp4", ".wav")
+            video.audio.write_audiofile(audio_path)
+            return audio_path
+        except Exception as e:
+            st.error(f"Failed to extract audio: {e}")
+            return None
+        finally:
+            if 'video' in locals():
+                video.close()
+
+        def transcribe_audio(audio_path: str, language: str = "en") -> str:
+            """
+            Transcribes audio from a WAV file to text using Whisper.
+            """
+            try:
+                with open(audio_path, "rb") as audio_file:
+                    transcription = client.audio.transcriptions.create(
+                        model="whisper-large-v3",
+                        file=audio_file,
+                        language=language
+                    )
+                return transcription.text
+            except Exception as e:
+                st.error(f"Failed to transcribe audio: {e}")
+                return ""
+
+        def generate_questions(transcript: str, question_type: str, num_questions: int) -> str:
+            """
+            Generates questions from the transcript using the LLM.
+            """
+            try:
+                # Define the prompt for question generation
+                prompt = f"""
+                You are an expert in generating educational content. Based on the following video transcript, create {num_questions} {question_type} questions:
+
+                Transcript:
+                {transcript}
+
+                Instructions:
+                1. Ensure the questions are clear, concise, and relevant to the content.
+                2. For multiple-choice questions, provide 4 options and indicate the correct answer.
+                3. For true/false questions, provide the correct answer.
+                4. For short answer and essay questions, provide a sample answer or key points.
+
+                Output the questions in the following format:
+                - Question 1: [Question text]
+                Options (if applicable): [Option A, Option B, Option C, Option D]
+                Answer: [Correct answer or key points]
+                """
+
+                # Generate questions using the LLM
+                response = client.chat.completions.create(
+                    model="gemma2-9b-it",  # Replace with your model
+                    messages=[
+                        {"role": "system", "content": "You are a helpful AI assistant."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                st.error(f"Failed to generate questions: {e}")
+                return ""
+
+        multimodal_agent = initialize_agent()
+        # Streamlit app
+        st.subheader("Ecllispe")
+        st.markdown("Upload a video, and we'll generate a question paper for you!")
+
+        # File uploader
+        video_file = st.file_uploader(
+            "Upload a video file (MP4, MOV, AVI)",
+            type=['mp4', 'mov', 'avi'],
+            help="Supported formats: MP4, MOV, AVI."
+        )
+
+        if video_file:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_video:
+                temp_video.write(video_file.read())
+                video_path = temp_video.name
+
+            st.video(video_path, format="video/mp4", start_time=0)
+
+            # Language selection
+            language = st.radio(
+                "Select language for transcription:",
+                options=["English", "Hindi"],
+                index=0
+            )
+            language_code = "en" if language == "English" else "hi"
+
+            # Question type selection
+            question_type = st.selectbox(
+                "Select question type:",
+                options=["Multiple Choice", "Short Answer", "True/False", "Essay"],
+                help="Choose the type of questions to generate."
+            )
+
+            # Number of questions
+            num_questions = st.slider(
+                "Number of questions to generate:",
+                min_value=1,
+                max_value=20,
+                value=5,
+                help="Select the number of questions to generate from the video."
+            )
+
+            if st.button("📝 Generate Question Paper", key="generate_questions_button"):
+                try:
+                    with st.spinner("Processing video and generating questions..."):
+                        # Step 1: Extract audio from the video
+                        audio_path = extract_audio_from_video(video_path)
+                        if not audio_path:
+                            raise Exception("Failed to extract audio from the video.")
+
+                        # Step 2: Transcribe audio to text using Whisper
+                        transcript = transcribe_audio(audio_path, language=language_code)
+                        if not transcript:
+                            raise Exception("Failed to transcribe audio to text.")
+
+                        # Step 3: Generate questions using the LLM
+                        questions = generate_questions(transcript, question_type, num_questions)
+                        if not questions:
+                            raise Exception("Failed to generate questions.")
+
+                        # Step 4: Display the generated questions
+                        st.subheader("Generated Question Paper")
+                        st.markdown(questions, unsafe_allow_html=True)
+
+                except Exception as error:
+                    st.error(f"An error occurred during question generation: {error}")
+                finally:
+                    # Clean up temporary files
+                    time.sleep(1)
+                    if Path(video_path).exists():
+                        try:
+                            Path(video_path).unlink(missing_ok=True)
+                        except PermissionError:
+                            st.warning(f"Could not delete {video_path}. It may still be in use.")
+                    if 'audio_path' in locals() and Path(audio_path).exists():
+                        try:
+                            Path(audio_path).unlink(missing_ok=True)
+                        except PermissionError:
+                            st.warning(f"Could not delete {audio_path}. It may still be in use.")
+        else:
+            st.info("Please upload a video file to generate a question paper.")
+
+        # Customize text area height
+        st.markdown(
+            """
+            <style>
+            .stTextArea textarea {
+                height: 100px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
