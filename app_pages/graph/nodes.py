@@ -24,3 +24,17 @@ chat_template = ChatPromptTemplate.from_messages([
     ("system", prompt),
     ("placeholder", "{messages}"),
 ])
+
+def create_data_summary(state: AgentState) -> str:
+    summary = "Data Structures and Algorithms Summary:\n"
+    for d in state["input_data"]:
+        # Use existing attributes of InputData class
+        summary += f"\n\nSyllabus Name: {d.syllabus_name}\n"
+        summary += f"Description: {d.data_description}\n"
+        if hasattr(d, 'units') and d.units:
+            summary += f"Units: {', '.join(d.units)}\n"
+        if hasattr(d, 'objectives') and d.objectives:
+            summary += f"Objectives: {', '.join(d.objectives)}\n"
+        if hasattr(d, 'text_content') and d.text_content:
+            summary += f"Text Content: {d.text_content[:100]}...\n"
+    return summary
