@@ -323,8 +323,8 @@ with tab1:
             handle_voice_input_and_output()
 
 with tab2:
-    client = gt(api_key="")  # Replace with your OpenAI API key
-    deepgram_client = DeepgramClient(api_key="")
+    client = gt(api_key="GROQ_API_KEY")  # Replace with your OpenAI API key
+    deepgram_client = DeepgramClient(api_key="DEEPGRAM_API_KEY")
 
     # Load the main prompt for question generation
     @st.cache_resource
@@ -533,7 +533,7 @@ with tab3:
     # Initialize API clients
     @st.cache_resource
     def get_groq_client():
-        return Groq(api_key="")
+        return Groq(api_key="GROK_API_KEY")
 
 
     groq_client = get_groq_client()
