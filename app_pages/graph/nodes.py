@@ -38,3 +38,19 @@ def create_data_summary(state: AgentState) -> str:
         if hasattr(d, 'text_content') and d.text_content:
             summary += f"Text Content: {d.text_content[:100]}...\n"
     return summary
+
+
+def route_to_tools(state: AgentState, ) -> Literal["tools", "__end__"]:
+    """
+    Use in the conditional_edge to route to the ToolNode if the last message
+    has tool calls. Otherwise, route back to the agent.
+    """
+
+    if messages := state.get("messages", []):
+        ai_message = messages[-1]
+    else:
+        raise ValueError(f"No messages found in input state to tool_edge: {state}")
+
+    if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
+        return "tools"
+    return "__end__"
