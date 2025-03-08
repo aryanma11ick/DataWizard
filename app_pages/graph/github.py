@@ -77,3 +77,19 @@ def github_summarize_repo(url: str, keyword: str = "") -> tuple:  # Changed defa
         repo_data = response.json()
         default_branch = repo_data['default_branch']
         description = repo_data.get('description', 'No description provided.')
+
+        # Fetch README
+        readme_url = f"https://api.github.com/repos/{username}/{repo_name}/readme"
+        response = requests.get(readme_url, headers={"Accept": "application/vnd.github.v3+json"})
+        if response.status_code == 404:
+            readme_text = "No README found in the repository."
+        elif response.status_code != 200:
+            return f"Failed to fetch README: HTTP {response.status_code}.", {
+                "intermediate_outputs": [{"output": f"Failed to fetch README: {response.status_code}"}]
+            }
+        else:
+            readme_data = response.json()
+            readme_content = base64.b64decode(readme_data['content']).decode('utf-8')
+            readme_text = md_to_text(readme_content)
+
+
