@@ -24,4 +24,14 @@ class PythonChatbot:
         workflow.add_mode("agent", call_model) #Model Handling Logic
         workflow.add_node('tools', call_tools) #Tools Handling Node
 
+        #Add Nodes based on nodes.py definitions
+        workflow.add_conditional_edges('agent', route_to_tools)
+
+        #Set Connections between tools and agent
+        workflow.add_edge('tools', 'agent')
+
+        # Define the entry between tools and agent
+        workflow.set_entry_point('agent')
+        return workflow.compile()
+
 
