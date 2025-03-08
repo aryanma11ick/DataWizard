@@ -31,5 +31,14 @@ def get_groq_client():
 
 @st.cache_resource
 def get_deepgram_client():
-    return Groq(api_key="API_KEY2")
+    Deepgram = DeepgramClient(api_key=API_KEY2)
+    return Deepgram
+
+groq_client = get_groq_client()
+deepgram = get_deepgram_client()
+
+# Initialize MediaPipe models
+mp_pose = mp.solutions.pose
+mp_face_mesh = mp.solutions.face_mesh
+mp_hands = mp.solutions.hands
 
