@@ -249,3 +249,10 @@ def text_to_speech(text, output_file_path):
     except Exception as e:
         st.error(f"Failed to convert text to speech: {e}")
         return None
+
+def get_first_three_sentences(text):
+    """Extract the first three sentences from text."""
+    if not text:
+        return ""
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    return ' '.join(sentences[:3])
