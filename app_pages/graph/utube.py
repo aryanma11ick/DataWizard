@@ -279,3 +279,36 @@ def utube_summarize_video(url: str = None, video_path: str = None, keyword: str 
                     return "Failed to transcribe the audio. Please ensure the audio is clear and in a supported language.", {
                         "intermediate_outputs": [{"output": "Failed to transcribe audio"}]
                     }
+
+                # Summarize transcript
+                try:
+                    summary = summarize_transcript(transcript)
+                    if not summary:
+                        return "Failed to generate a summary. The transcript might be too short or unclear.", {
+                            "intermediate_outputs": [{"output": "Failed to generate summary"}]
+                        }
+
+                    # Prepare results
+                    results = summary  # Directly return the summary
+
+                    if keyword:
+                        # For uploaded videos, keyword search is not supported directly
+                        results += "\nKeyword search is not supported for uploaded videos."
+
+                    return results, {"intermediate_outputs": [{"output": results}]}
+                except Exception as e:
+                    return f"Failed to summarize the transcript. Error: {e}", {
+                        "intermediate_outputs": [{"output": f"Failed to summarize transcript: {e}"}]
+                    }
+            except Exception as e:
+                return f"Failed to process the uploaded video. Error: {e}", {
+                    "intermediate_outputs": [{"output": f"Failed to process video: {e}"}]
+                }
+
+        else:
+            return "Please provide either a YouTube URL or a video file path.", {
+                "intermediate_outputs": [{"output": "No input provided"}]
+            }
+
+    except Exception as e:
+        return str(e), {"intermediate_outputs": [{"output": str(e)}]
