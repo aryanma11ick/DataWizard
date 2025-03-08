@@ -237,3 +237,15 @@ def transcribe_audio(audio_path: str, language: str = "en") -> str:
     except Exception as e:
         st.error(f"Failed to transcribe audio: {e}")
         return ""
+
+
+def text_to_speech(text, output_file_path):
+    #Converts text to speech using Deepgram
+    options = {"model": "aura-luna-en", "encoding": "linear16", "container": "wav"}
+    try:
+        response = deepgram_client.speak.v("1").save(output_file_path, {"text": text}, options)
+        logging.info(f"TTS response saved to {output_file_path}")
+        return response
+    except Exception as e:
+        st.error(f"Failed to convert text to speech: {e}")
+        return None
