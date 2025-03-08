@@ -53,3 +53,14 @@ import base64
 import wave
 import streamlit.components.v1 as components
 
+#Ensuring directory exists
+audio_files_dir = "audio_files"
+os.makedirs(audio_files_dir, exist_ok=True)
+
+#Initializing API Keys
+groq_api_key = ""
+deepgram_api_key = ""
+
+groq_client = gt(api_key=groq_api_key)
+deepgram_client = DeepgramClient(api_key=deepgram_api_key)
+
