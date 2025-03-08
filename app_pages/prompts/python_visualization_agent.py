@@ -502,3 +502,248 @@ with tab2:
             """,
             unsafe_allow_html=True
         )
+
+import threading
+
+# Create a global lock and audio buffer for interview audio (do not store in session_state)
+interview_lock = threading.Lock()
+interview_audio_buffer = []   # Global list to hold audio chunks (bytes)
+
+# Initialize session state for interview safely (only JSON-serializable types)
+def initialize_interview_session():
+    if "interview" not in st.session_state:
+        st.session_state.interview = {
+            "current_question": 0,
+            "responses": [],
+            "interview_active": False,
+            "generated_questions": [],
+            "interview_topics": [],
+            "last_response": ""
+        }
+
+# Call the initialization before using st.session_state.interview (e.g., at the top of tab3)
+initialize_interview_session()
+
+with tab3:
+    AUDIO_SAMPLE_RATE = 16000
+    CHUNK_DURATION = 0.5  # 500ms chunks for low latency
+    MAX_QUESTIONS = 5
+
+
+    # Initialize API clients
+    @st.cache_resource
+    def get_groq_client():
+        return Groq(api_key="")
+
+
+    groq_client = get_groq_client()
+
+
+    # Initialize session state
+    def initialize_interview_session():
+        if "interview" not in st.session_state:
+            st.session_state.interview = {
+                "current_question": 0,
+                "responses": [],
+                "interview_active": False,
+                "generated_questions": [],
+                "interview_topics": [],
+                "last_response": ""
+            }
+
+
+    # Call the initialization before using st.session_state.interview (e.g., at the top of tab3)
+
+    # Generate interview questions
+    def generate_questions(topics: list, position: str = "entry-level") -> list:
+        prompt = f"""
+        Generate {MAX_QUESTIONS} technical interview questions for a {position} position 
+        covering these topics: {', '.join(topics)}. Make questions progressively challenging.
+        Format as a JSON list of strings.
+        """
+
+        try:
+            response = groq_client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            return list(json.loads(response.choices[0].message.content).values())[0]
+        except Exception as e:
+            st.error(f"Failed to generate questions: {str(e)}")
+            return [
+                "Explain the difference between supervised and unsupervised learning",
+                "Describe how gradient descent works",
+                "What is a neural network activation function?",
+                "Explain the attention mechanism in transformers",
+                "How would you handle imbalanced datasets?"
+            ]
+
+
+    # Audio processing class
+    class RealTimeAudioProcessor(AudioProcessorBase):
+        def __init__(self):
+            self.chunk_size = int(AUDIO_SAMPLE_RATE * CHUNK_DURATION)
+            self.buffer = np.array([], dtype=np.int16)
+
+        def recv(self, frame: np.ndarray) -> np.ndarray:
+            audio_data = frame.to_ndarray()
+            self.buffer = np.concatenate([self.buffer, audio_data])
+
+            while len(self.buffer) >= self.chunk_size:
+                chunk = self.buffer[:self.chunk_size]
+                with interview_lock:
+                    interview_audio_buffer.append(chunk.tobytes())
+                self.buffer = self.buffer[self.chunk_size:]
+
+            return frame
+
+
+    # Global variables for audio processing
+    interview_lock = threading.Lock()
+    interview_audio_buffer = []
+
+
+    def process_audio():
+        while True:
+            with interview_lock:
+                if interview_audio_buffer:
+                    audio_chunk = interview_audio_buffer.pop(0)
+                else:
+                    audio_chunk = None
+            if audio_chunk:
+                # Simulate transcription (replace with actual Deepgram API call)
+                time.sleep(1)  # Simulate processing delay
+                transcript = "Simulated transcription of audio chunk."
+                st.session_state.interview["last_response"] += transcript + " "
+
+            time.sleep(0.1)  # Avoid busy waiting
+
+
+    # Generate feedback
+    def generate_feedback(question: str, response: str) -> dict:
+        prompt = f"""
+        Analyze this technical interview response:
+        Question: {question}
+        Response: {response}
+
+        Provide JSON with:
+        - technical_score (1-10)
+        - communication_score (1-5)
+        - key_improvements
+        - model_answer
+        """
+
+        try:
+            response = groq_client.chat.completions.create(
+                model="mixtral-8x7b-32768",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.4,
+                response_format={"type": "json_object"}
+            )
+            return json.loads(response.choices[0].message.content)
+        except Exception as e:
+            st.error(f"Feedback generation error: {str(e)}")
+            return {
+                "technical_score": 0,
+                "communication_score": 0,
+                "key_improvements": "Error generating feedback",
+                "model_answer": "Error generating model answer"
+            }
+
+
+    # Text-to-speech function
+    def text_to_speech(text: str) -> Optional[bytes]:
+        try:
+            # Simulate TTS (replace with actual Deepgram TTS API call)
+            return b"Simulated TTS audio data"
+        except Exception as e:
+            st.error(f"TTS Error: {str(e)}")
+            return None
+
+
+    # Streamlit UI
+    st.title("AI Interview Coach 🤖💬")
+    st.write("Technical interview practice")
+
+    initialize_interview_session()
+
+    # Interview configuration
+    if not st.session_state.interview["interview_active"]:
+        with st.form("config"):
+            topics = st.multiselect(
+                "Technical Topics:",
+                ["ML Basics", "Data Structures", "Algorithms", "Neural Networks"],
+                default=["ML Basics"]
+            )
+            level = st.selectbox("Level:", ["Entry", "Mid", "Senior"])
+
+            if st.form_submit_button("Start Interview"):
+                st.session_state.interview.update({
+                    "current_question": 0,
+                    "responses": [],
+                    "interview_active": True,
+                    "generated_questions": generate_questions(topics, level),
+                    "interview_topics": topics,
+                    "last_response": ""
+                })
+                st.rerun()
+
+    # Main interview interface
+    if st.session_state.interview["interview_active"]:
+        webrtc_ctx = webrtc_streamer(
+            key="interview",
+            mode=WebRtcMode.SENDRECV,
+            audio_processor_factory=RealTimeAudioProcessor,
+            rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+            media_stream_constraints={"audio": True, "video": False},
+            async_processing=True
+        )
+
+        if st.session_state.interview["current_question"] < len(st.session_state.interview["generated_questions"]):
+            current_q = st.session_state.interview["generated_questions"][
+                st.session_state.interview["current_question"]]
+            st.subheader(f"Question {st.session_state.interview['current_question'] + 1}")
+            st.write(current_q)
+
+            if st.button("Submit Response"):
+                feedback = generate_feedback(current_q, st.session_state.interview["last_response"])
+                st.session_state.interview["responses"].append({
+                    "question": current_q,
+                    "response": st.session_state.interview["last_response"],
+                    "feedback": feedback
+                })
+
+                # Get AI response
+                ai_response = text_to_speech(feedback["model_answer"])
+                if ai_response:
+                    st.audio(ai_response, format="audio/wav")
+
+                st.session_state.interview.update({
+                    "current_question": st.session_state.interview["current_question"] + 1,
+                    "last_response": ""
+                })
+
+                if st.session_state.interview["current_question"] >= len(
+                        st.session_state.interview["generated_questions"]):
+                    st.session_state.interview["interview_active"] = False
+                st.rerun()
+        else:
+            st.success("Interview Complete!")
+            st.session_state.interview["interview_active"] = False
+
+    # Feedback display
+    if st.session_state.interview["responses"]:
+        st.subheader("Feedback Summary")
+        for i, response in enumerate(st.session_state.interview["responses"]):
+            with st.expander(f"Question {i + 1}", expanded=i == 0):
+                st.write(f"**Question:** {response['question']}")
+                st.write(f"**Your Response:** {response['response']}")
+                st.json(response["feedback"])
+
+    # Start processing thread
+    if "audio_thread" not in st.session_state:
+        audio_thread = threading.Thread(target=process_audio, daemon=True)
+        audio_thread.start()
+        st.session_state.audio_thread = audio_thread
