@@ -747,3 +747,25 @@ with tab3:
         audio_thread = threading.Thread(target=process_audio, daemon=True)
         audio_thread.start()
         st.session_state.audio_thread = audio_thread
+
+with tab4:
+    st.subheader("Debugging Info")
+    if 'visualisation_chatbot' in st.session_state:
+        for i, output in enumerate(st.session_state.visualisation_chatbot.intermediate_outputs):
+            with st.expander(f"Step {i+1}"):
+                if isinstance(output, dict):
+                    if 'thought' in output:
+                        st.markdown("### Thought Process")
+                        st.markdown(output['thought'])
+                    if 'code' in output:
+                        st.markdown("### Code")
+                        st.code(output['code'], language="python")
+                    if 'output' in output:
+                        st.markdown("### Output")
+                        st.text(output['output'])
+                else:
+                    st.markdown("### Output")
+                    st.text(output)
+    else:
+        st.info("No debug information available yet. Start a conversation to see intermediate outputs.")
+
