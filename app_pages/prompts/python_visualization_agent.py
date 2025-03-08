@@ -215,3 +215,12 @@ def record_audio(file_path, timeout=10, phrase_time_limit=None, retries=3, energ
             if attempt == retries - 1:
                 raise
     logging.error("Recording failed after all retries")
+
+def play_audio(file_path):
+    #Play audio automatically using HTML5 audio with audioplay
+    audio_file = open(file_path, "rb")
+    audio_bytes = audio_file.read()
+    audio_html = f'<audio autoplay><source src="data:audio/wav;base64,{audio_base64}" type="audio/wav"></audio>'
+    st.markdown(audio_html, unsafe_allow_html=True)
+
+
