@@ -79,3 +79,55 @@ def call_model(state: AgentState):
         "messages": [llm_outputs],
         "intermediate_outputs": [current_data_message.content]
     }
+
+
+def call_tools(state: AgentState):
+    last_message = state["messages"][-1]
+    tool_invocations = []
+
+    if isinstance(last_message, AIMessage) and hasattr(last_message, 'tool_calls'):
+        tool_invocations = [
+            ToolInvocation(
+                tool=tool_call["name"],
+                tool_input={"graph_state": state, **tool_call["args"]}
+            ) for tool_call in last_message.tool_calls
+        ]
+
+    responses = tool_executor.batch(tool_invocations)
+    tool_messages = []
+    state_updates = {}
+
+    for tc, response in zip(last_message.tool_calls, responses):
+        if isinstance(response, Exception):
+            # Log the exception and continue
+            print(f"Error in tool call {tc['name']}: {response}")
+            tool_messages.append(ToolMessage(
+                content=f"Error in tool call {tc['name']}: {response}",
+                name=tc["name"],
+                tool_call_id=tc["id"]
+            ))
+            continue
+
+        if not isinstance(response, tuple) or len(response) != 2:
+            # Log unexpected response format
+            print(f"Unexpected response format for tool call {tc['name']}: {response}")
+            tool_messages.append(ToolMessage(
+                content=f"Unexpected response format for tool call {tc['name']}.",
+                name=tc["name"],
+                tool_call_id=tc["id"]
+            ))
+            continue
+
+        message, updates = response
+        tool_messages.append(ToolMessage(
+            content=str(message),
+            name=tc["name"],
+            tool_call_id=tc["id"]
+        ))
+        state_updates.update(updates)
+
+    if 'messages' not in state_updates:
+        state_updates["messages"] = []
+
+    state_updates["messages"].extend(tool_messages)
+    return state_updates
