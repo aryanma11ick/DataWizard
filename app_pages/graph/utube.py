@@ -60,3 +60,13 @@ def extract_metadata(url):
         return title, channel
     except requests.RequestException as e:
         raise ValueError(f"Failed to fetch metadata: {e}")
+
+# Function to download the thumbnail
+def download_thumbnail(video_id):
+    image_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+    try:
+        img_data = requests.get(image_url).content
+        with open('thumbnail.jpg', 'wb') as handler:
+            handler.write(img_data)
+    except requests.RequestException as e:
+        raise ValueError(f"Failed to download thumbnail: {e}")
