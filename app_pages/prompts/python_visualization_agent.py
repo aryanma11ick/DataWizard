@@ -223,4 +223,17 @@ def play_audio(file_path):
     audio_html = f'<audio autoplay><source src="data:audio/wav;base64,{audio_base64}" type="audio/wav"></audio>'
     st.markdown(audio_html, unsafe_allow_html=True)
 
-
+def transcribe_audio(audio_path: str, language: str = "en") -> str:
+    """Transcribes audio from a WAV file to text using Whisper."""
+    try:
+        with open(audio_path, "rb") as audio_file:
+            transcription = groq_client.audio.transcriptions.create(
+                model="whisper-large-v3-turbo",
+                file=audio_file,
+                language=language
+            )
+        logging.info(f"Transcription: {transcription.text}")
+        return transcription.text
+    except Exception as e:
+        st.error(f"Failed to transcribe audio: {e}")
+        return ""
