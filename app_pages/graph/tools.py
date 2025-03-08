@@ -92,3 +92,29 @@ def duckduckgo_search(query: str) -> Tuple[str, dict]:
                 "output": error_msg
             }]
         }
+
+
+@tool(parse_docstring=True)
+def arxiv_search(query: str) -> Tuple[str, dict]:
+    """
+    Search arXiv for a query and generate questions and answers.
+
+    Args:
+        query (str): The search query string.
+
+    Returns:
+        Tuple[str, dict]: The formatted Q&A and state updates.
+    """
+    response = requests.get(f"http://export.arxiv.org/api/query?search_query=all:{query}&start=0&max_results=1")
+    if response.status_code == 200:
+        result = response.text
+
+        # Format the response as Q&A
+        output = f"""
+        Question: What are the recent research findings about {query} according to arXiv?
+        Answer: {result}
+        """
+        return output, {"intermediate_outputs": [{"thought": f"Searching arXiv for {query}", "output": result}]}
+
+    return 'Error fetching results from arXiv.', {
+        "intermediate_outputs": [{"thought": "Error in arXiv search", "output": "Error"}]}
