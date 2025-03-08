@@ -41,3 +41,39 @@ def summarize_text(text: str) -> str:
     except Exception as e:
         print(f"Failed to summarize text: {e}")
         return "Failed to generate summary."
+
+
+# Main tool function to summarize GitHub repository
+@tool(parse_docstring=True)
+def github_summarize_repo(url: str, keyword: str = "") -> tuple:  # Changed default to empty string
+    """
+    Summarizes a GitHub repository with a developer-friendly overview, including README summary,
+    key directory structure, and programming languages. Optionally searches for a keyword in the README.
+
+    Args:
+        url (str): The URL of the GitHub repository (e.g., https://github.com/username/repo_name).
+        keyword (str): A keyword to search for in the README (optional, default: empty string).
+
+    Returns:
+        tuple: A tuple containing the results string and a dictionary with intermediate outputs.
+              Format: (results, {"intermediate_outputs": [{"output": results}]})
+    """
+    try:
+        # Extract username and repo_name from URL
+        match = re.search(r"github\.com/([^/]+)/([^/]+)", url)
+        if not match:
+            return "Invalid GitHub repository URL. Please provide a URL in the format 'https://github.com/username/repo_name'.", {
+                "intermediate_outputs": [{"output": "Invalid URL"}]
+            }
+        username, repo_name = match.groups()
+
+        # Fetch repository details (default branch and description)
+        repo_url = f"https://api.github.com/repos/{username}/{repo_name}"
+        response = requests.get(repo_url, headers={"Accept": "application/vnd.github.v3+json"})
+        if response.status_code != 200:
+            return f"Failed to fetch repository details: HTTP {response.status_code}. The repository might be private or not exist.", {
+                "intermediate_outputs": [{"output": f"Failed to fetch repo details: {response.status_code}"}]
+            }
+        repo_data = response.json()
+        default_branch = repo_data['default_branch']
+        description = repo_data.get('description', 'No description provided.')
