@@ -1,0 +1,8 @@
+streamlit
+streamlit-webrtc
+deepgram-sdk
+mediapipe
+numpy
+opencv-python
+groq
+audio-recorder-streamlit
