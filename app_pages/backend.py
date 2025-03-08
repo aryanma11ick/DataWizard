@@ -34,4 +34,21 @@ class PythonChatbot:
         workflow.set_entry_point('agent')
         return workflow.compile()
 
+    def user_sent_message(self, user_query):
+        #Handles user queries by sending messages through the graph
 
+        starting_image_paths_set = set(sum(self.output_image_paths.values(), []))
+        input_state = {
+            "message": self.chat_history + [HumanMessage(content=user_query)]
+            "output_image_paths": list(starting_image_paths_set),
+        }
+
+        #Pass the input state to the compiled graph for processing
+        result = self.graph.invoke(input_state, {"recursion_limit": 50})
+        self.chat_history = result["messages"]
+
+        #Update the output image paths and intermediate outputs
+        new_image_paths = set(result["output_image_paths"]) - starting_image_paths_set
+        self.output_image_paths[len(self.chat_history) - 1] = list(new_image_paths)
+        if "intermediate_outputs" in result:
+            self.intermediate_outputs.extend(result["intermediate_outputs"])
