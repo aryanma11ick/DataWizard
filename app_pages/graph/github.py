@@ -115,3 +115,34 @@ def github_summarize_repo(url: str, keyword: str = "") -> tuple:  # Changed defa
                 structure += f"\nKey directories present: {', '.join(key_dirs_present)}"
             else:
                 structure += "\nNo key directories (src, tests, docs, examples) found."
+
+            # Fetch programming languages
+            languages_url = f"https://api.github.com/repos/{username}/{repo_name}/languages"
+            response = requests.get(languages_url, headers={"Accept": "application/vnd.github.v3+json"})
+            if response.status_code == 200:
+                languages_data = response.json()
+                languages = ', '.join(languages_data.keys()) or "No languages detected."
+            else:
+                languages = "Failed to fetch programming languages."
+
+            # Compile results in a developer-friendly format
+            results = (
+                f"Description: {description}\n\n"
+                f"Summary of README:\n{summary}\n\n"
+                f"Repository Structure:\n{structure}\n\n"
+                f"Programming Languages: {languages}"
+            )
+
+            # Search for keyword if provided and README exists
+            if keyword.strip() and readme_text != "No README found in the repository.":  # Check for non-empty keyword
+                if keyword.lower() in readme_text.lower():
+                    results += f"\nKeyword '{keyword}' found in README."
+                else:
+                    results += f"\nKeyword '{keyword}' not found in README."
+
+            return results, {"intermediate_outputs": [{"output": results}]}
+
+    except Exception as e:
+        return f"Error processing repository: {str(e)}", {
+            "intermediate_outputs": [{"output": str(e)}]
+        }
