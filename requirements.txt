@@ -18,3 +18,5 @@ langchain-core
 phi
 groq
 google-generativeai
+langgraph
+langchain

@@ -10,3 +10,18 @@ import pandas as pd
 import cv2
 import json
 from PIL import Image
+
+class PythonChatbot:
+    def __init__(self):
+        super().__init__()
+        self.reset_chat()
+        self.graph = self.create_graph()
+
+    def create_graph(self):
+
+        workflow = StateGraph(AgentState)
+
+        workflow.add_mode("agent", call_model) #Model Handling Logic
+        workflow.add_node('tools', call_tools) #Tools Handling Node
+
+
