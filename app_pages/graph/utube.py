@@ -240,3 +240,42 @@ def utube_summarize_video(url: str = None, video_path: str = None, keyword: str 
                     "intermediate_outputs": [{"output": "Failed to transcribe audio"}]
                 }
 
+            # Summarize transcript
+            try:
+                summary = summarize_transcript(transcript_text)
+                if not summary:
+                    return "Failed to generate a summary. The transcript might be too short or unclear.", {
+                        "intermediate_outputs": [{"output": "Failed to generate summary"}]
+                    }
+
+                # Prepare results
+                results = summary  # Directly return the summary
+
+                if keyword:
+                    # For YouTube videos, keyword search is supported
+                    transcript = YouTubeTranscriptApi.get_transcript(video_id)
+                    timestamp = find_keyword_timestamp(transcript, keyword) if transcript else None
+                    if timestamp:
+                        results += f"\nKeyword '{keyword}' found at {timestamp} seconds."
+                    else:
+                        results += f"\nKeyword '{keyword}' not found in the transcript."
+
+                return results, {"intermediate_outputs": [{"output": results}]}
+            except Exception as e:
+                return f"Failed to summarize the transcript. Error: {e}", {
+                    "intermediate_outputs": [{"output": f"Failed to summarize transcript: {e}"}]
+                }
+
+        elif video_path:
+            # Handle uploaded video
+            try:
+                # Extract audio from video
+                audio_path = extract_audio_from_video(video_path)
+                print(f"Audio extracted to: {audio_path}")
+
+                # Transcribe audio to text
+                transcript = transcribe_audio(audio_path)
+                if not transcript:
+                    return "Failed to transcribe the audio. Please ensure the audio is clear and in a supported language.", {
+                        "intermediate_outputs": [{"output": "Failed to transcribe audio"}]
+                    }
