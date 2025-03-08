@@ -20,3 +20,5 @@ groq
 google-generativeai
 langgraph
 langchain
+phidata
+moviepy
