@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from dotenv import load_dotenv
 import json
 from langchain_core.messages import HumanMessage, AIMessage
 from app_pages.backend import PythonChatbot, InputData
@@ -58,8 +59,9 @@ audio_files_dir = "audio_files"
 os.makedirs(audio_files_dir, exist_ok=True)
 
 #Initializing API Keys
-groq_api_key = ""
-deepgram_api_key = ""
+load_dotenv()
+groq_api_key = os.getenv("GROQ_API_KEY")
+deepgram_api_key = os.getenv("DEEPGRAM_API_KEY")
 
 groq_client = gt(api_key=groq_api_key)
 deepgram_client = DeepgramClient(api_key=deepgram_api_key)
@@ -171,3 +173,21 @@ st.markdown("""
 
 #Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["Learn with Me", "Ecllipse", "UpSkill", "Debugging Info"])
+
+#Deepgram API setup
+deepgram_client = DeepgramClient(api_key=deepgram_api_key)
+
+
+#Constants
+sample_rate= 44100
+is_recording = False
+audio_frames = []
+
+#Cached Recognizer
+@lru_cache(maxsize=None)
+def get_recognizer():
+    return sr.Recognizer()
+
+def record_audio(file_path, timeout=10, phrase_time_limit=None, retries=3, energy_threshold=2000,
+                 pause_threshold=1, phrase_threshold=0.1, dynamic_energy_threshold=True,
+                 calibration_duration=1):
