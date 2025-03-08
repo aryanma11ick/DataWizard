@@ -52,3 +52,9 @@ class PythonChatbot:
         self.output_image_paths[len(self.chat_history) - 1] = list(new_image_paths)
         if "intermediate_outputs" in result:
             self.intermediate_outputs.extend(result["intermediate_outputs"])
+
+        def reset_chat(self):
+            #Resets the chatbot's state, clearing history and intermediate output
+            self.chat_history = []
+            self.intermediate_outputs = []
+            self.output_image_paths = {}
