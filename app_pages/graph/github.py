@@ -25,3 +25,19 @@ def md_to_text(md: str) -> str:
     except Exception as e:
         print(f"Failed to convert markdown to text: {e}")
         return md  # Return original text as fallback
+
+# Function to summarize text with a developer-focused prompt
+def summarize_text(text: str) -> str:
+    """Summarize the README, focusing on purpose, installation, and usage."""
+    try:
+        response = client1.chat.completions.create(
+            model="gemma2-9b-it",
+            messages=[
+                {"role": "system", "content": "You are a helpful AI assistant."},
+                {"role": "user", "content": f"Summarize the following README, focusing on the purpose, installation instructions, and usage examples:\n{text}"}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Failed to summarize text: {e}")
+        return "Failed to generate summary."
