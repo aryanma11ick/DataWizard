@@ -256,3 +256,26 @@ def get_first_three_sentences(text):
         return ""
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     return ' '.join(sentences[:3])
+
+def handle_voice_input_and_output():
+    """Handle voice input, transcription, and TTS output."""
+    global is_recording, audio_frames
+    audio_frames = []
+    is_recording = True
+    st.write("Recording... Speak now.")
+
+    record_audio("user_voice_input.wav")
+    transcription = transcribe_audio("user_voice_input.wav")
+    if transcription:
+        st.session_state.visualisation_chatbot.user_sent_message(transcription)
+        if st.session_state.visualisation_chatbot.chat_history:
+            last_message = st.session_state.visualisation_chatbot.chat_history[-1]
+            if isinstance(last_message, AIMessage):
+                full_response = last_message.content
+                tts_text = get_first_three_sentences(full_response)
+                text_to_speech(tts_text, "nurse_response.wav")
+                if os.path.exists("nurse_response.wav"):
+                    st.session_state.play_tts = True
+                else:
+                    st.error("Failed to generate response audio.")
+        st.rerun()
