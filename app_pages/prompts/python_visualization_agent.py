@@ -191,3 +191,27 @@ def get_recognizer():
 def record_audio(file_path, timeout=10, phrase_time_limit=None, retries=3, energy_threshold=2000,
                  pause_threshold=1, phrase_threshold=0.1, dynamic_energy_threshold=True,
                  calibration_duration=1):
+    recognizer = get_recognizer()
+    recognizer.energy_threshold = energy_threshold
+    recognizer.pause_threshold = pause_threshold
+    recognizer.phrase_threshold = phrase_threshold
+    recognizer.dynamic_energy_threshold = dynamic_energy_threshold
+
+    for attempt in range(retries):
+        try:
+            with sr.Microphone() as source:
+                logging.info("Calibrating for ambient noise...")
+                recognizer.adjust_for_ambient_noise(source, duration=calibration_duration)
+                logging.info("Recording started")
+                audio_data = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+                logging.info("Recording complete")
+                with open(file_path, "wb") as f:
+                    f.write(audio_data.get_wav_data())
+                return
+        except sr.WaitTimeoutError:
+            logging.warning(f"Listening timed out, retrying... ({attempt + 1}/{retries})")
+        except Exception as e:
+            logging.error(f"Failed to record audio: {e}")
+            if attempt == retries - 1:
+                raise
+    logging.error("Recording failed after all retries")
